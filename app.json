@@ -1,10 +1,11 @@
 {
   "expo": {
-    "name": "Pet-Tracker",
-    "slug": "Pet-Tracker",
+    "name": "PetScribe",
+    "slug": "petscribe",
+    "icon": "./assets/images/Petscribe-Logo.png",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "platforms": ["ios", "android"],
     "scheme": "pettracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -16,7 +17,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.PetTracker"
     },
     "web": {
       "bundler": "metro",
