@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -213,46 +214,39 @@ export default function PetProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Pet details */}
-      <View
-        style={{
-          backgroundColor: "#333",
-          padding: 20,
-          borderRadius: 10,
-          marginBottom: 20,
-        }}
-      >
-        <Text style={styles.title}>{petData.name}</Text>
-        <Text style={styles.subtitle}>{petData.type}</Text>
-      </View>
-
-      {petData.image ? (
+      <View style={styles.profileCard}>
         <Image
-          source={{ uri: petData.image }}
+          source={
+            petData.image
+              ? { uri: petData.image }
+              : require("../../assets/images/default-pet.png")
+          }
           style={styles.petImage}
           resizeMode="cover"
         />
-      ) : (
-        <Text style={styles.noImage}>No image provided</Text>
-      )}
+        <Text style={styles.title}>{petData.name}</Text>
+        <Text style={styles.subtitle}>{petData.type}</Text>
 
-      <Button title="Upload New Photo" onPress={pickImage} />
-
-      <View style={styles.infoBox}>
+        <Button title="Upload New Photo" color="#2A9D8F" onPress={pickImage} />
+      </View>
+      {/* DETAILS */}
+      <View style={styles.card}>
         {petData.breed && (
-          <Text style={styles.info}>Breed: {petData.breed}</Text>
+          <Text style={styles.info}>🐶 Breed: {petData.breed}</Text>
         )}
         {petData.color && (
-          <Text style={styles.info}>Color: {petData.color}</Text>
+          <Text style={styles.info}>🎨 Color: {petData.color}</Text>
         )}
         {petData.weight && (
-          <Text style={styles.info}>Weight: {petData.weight}</Text>
+          <Text style={styles.info}>⚖️ Weight: {petData.weight}</Text>
         )}
         {petData.allergies && (
-          <Text style={styles.info}>Allergies: {petData.allergies}</Text>
+          <Text style={styles.info}>🚩 Allergies: {petData.allergies}</Text>
         )}
         {petData.logs?.lastBath && (
-          <Text style={styles.info}>Last Bath: {petData.logs.lastBath}</Text>
+          <Text style={styles.info}>🛁 Last Bath: {petData.logs.lastBath}</Text>
         )}
+
         {petData.logs?.bathFrequency && (
           <Text style={styles.info}>
             Bath Frequency: {petData.logs.bathFrequency}
@@ -268,108 +262,81 @@ export default function PetProfileScreen() {
         {petData.notes && (
           <Text style={styles.info}>Notes: {petData.notes}</Text>
         )}
-      </View>
-
-      {/* /* Birthday */}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Birthday</Text>
-
+      </View>{" "}
+      {/* ✅ CLOSE THE CARD HERE */}
+      {/* BIRTHDAY */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>🎉 Birthday</Text>
         {petData.birthday ? (
-          <Text style={styles.info}>🎉 Birthday: {petData.birthday}</Text>
+          <>
+            <Text style={styles.info}>Date: {petData.birthday}</Text>
+            <Text style={styles.info}>
+              Age:{" "}
+              {(() => {
+                const age = calculateAge(petData.birthday);
+                if (!age) return "N/A";
+                return `${age.years} year${age.years !== 1 ? "s" : ""} ${
+                  age.months
+                } month${age.months !== 1 ? "s" : ""}`;
+              })()}
+            </Text>
+          </>
         ) : (
-          <Text style={styles.info}>No birthday set yet.</Text>
+          <Text style={styles.info}>No birthday set.</Text>
         )}
-
-        {petData.birthday && (
-          <Text style={styles.info}>
-            Age:{" "}
-            {(() => {
-              const age = calculateAge(petData.birthday);
-              if (!age) return "N/A";
-              return `${age.years} year${age.years !== 1 ? "s" : ""} ${
-                age.months
-              } month${age.months !== 1 ? "s" : ""} old`;
-            })()}
-          </Text>
-        )}
-
         <Button
           title={petData.birthday ? "Update Birthday" : "Set Birthday"}
+          color="#E76F51"
           onPress={() => setShowBirthdayPicker(true)}
         />
+      </View>{" "}
+      {/* ✅ close card here */}
+      // ✅ THIS IS OUTSIDE THE CARD
+      {showBirthdayPicker && (
+        <DateTimePicker
+          value={birthday || new Date()}
+          mode="date"
+          display="default"
+          onChange={async (event, selectedDate) => {
+            setShowBirthdayPicker(false);
+            if (selectedDate) {
+              const formattedDate = selectedDate.toISOString().split("T")[0];
+              setBirthday(selectedDate);
 
-        {showBirthdayPicker && (
-          <DateTimePicker
-            value={birthday || new Date()}
-            mode="date"
-            display="default"
-            onChange={async (event, selectedDate) => {
-              setShowBirthdayPicker(false);
-              if (selectedDate) {
-                const formattedDate = selectedDate.toISOString().split("T")[0];
-                setBirthday(selectedDate);
+              // Save to storage
+              const updatedPet = {
+                ...petData,
+                birthday: formattedDate, // 👈 simplified
+              };
+              await updatePetInStorage(updatedPet);
+              console.log("🎉 Birthday saved:", formattedDate);
 
-                // Save to storage
-                const handleSaveBirthday = async () => {
-                  if (!birthdayDate) {
-                    alert("Please select a birthday");
-                    return;
-                  }
+              // Schedule yearly notification
+              const month = selectedDate.getMonth();
+              const day = selectedDate.getDate();
+              const ageNow = calculateAge(formattedDate);
 
-                  const formattedBirthday = birthdayDate
-                    .toISOString()
-                    .split("T")[0];
+              console.log(
+                `🎉 Scheduling yearly birthday notification for ${
+                  month + 1
+                }/${day}`
+              );
 
-                  const updatedPet = {
-                    ...petData,
-                    logs: {
-                      ...petData.logs,
-                      birthday: formattedBirthday,
-                    },
-                  };
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: `🎂 Happy Birthday, ${petData.name}!`,
+                  body: `${petData.name} turns ${ageNow.years + 1} today! 🥳`,
+                },
+                trigger: { month, day, hour: 9, minute: 0, repeats: true },
+              });
 
-                  await updatePetInStorage(updatedPet);
-                  console.log("🎉 Birthday saved:", formattedBirthday);
-                };
-
-                // Schedule yearly notification
-                const month = selectedDate.getMonth(); // 0-11
-                const day = selectedDate.getDate(); // 1-31
-
-                console.log(
-                  `🎉 Scheduling yearly birthday notification for ${
-                    month + 1
-                  }/${day}`
-                );
-
-                const ageNow = calculateAge(
-                  selectedDate.toISOString().split("T")[0]
-                );
-
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title: `🎂 Happy Birthday, ${petData.name}!`,
-                    body: `${petData.name} turns ${ageNow.years + 1} today! 🥳`,
-                  },
-                  trigger: {
-                    month: month,
-                    day: day,
-                    hour: 9,
-                    minute: 0,
-                    repeats: true,
-                  },
-                });
-
-                console.log("✅ Birthday & yearly notification scheduled.");
-              }
-            }}
-          />
-        )}
-      </View>
-
+              console.log("✅ Birthday & yearly notification scheduled.");
+            }
+          }}
+        />
+      )}
       {/* Bathing Section */}
-      <View style={styles.section}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Bathing</Text>
         <Text style={styles.info}>
           Last Bath: {petData.logs?.lastBath || "N/A"}
@@ -386,7 +353,7 @@ export default function PetProfileScreen() {
       </View>
 
       {/* Set Bath Frequency */}
-      <View style={styles.section}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Set Bath Frequency</Text>
 
         <Text style={styles.info}>Enter number:</Text>
@@ -455,7 +422,7 @@ export default function PetProfileScreen() {
       </View>
 
       {/* Pet ID Section */}
-      <View style={styles.section}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Pet ID Number</Text>
         <TextInput
           style={styles.input}
@@ -476,33 +443,30 @@ export default function PetProfileScreen() {
           }}
         />
       </View>
-
-      {/* Vet Information Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Vet Information</Text>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📝 Vet Info</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., Dr. Smith, Main Street Vet, (123) 456-7890"
+          placeholder="e.g., Dr. Smith, Clinic Name"
           placeholderTextColor="#999"
           value={vetInfo}
           onChangeText={setVetInfo}
           multiline
         />
-        <Button
-          title="Save Vet Info"
+        <TouchableOpacity
+          style={styles.button}
           onPress={async () => {
-            const updatedPet = {
-              ...petData,
-              vetInfo,
-            };
+            const updatedPet = { ...petData, vetInfo };
             await updatePetInStorage(updatedPet);
-            console.log("✅ Vet Info saved.");
           }}
-        />
+
+        >
+          <Text style={styles.buttonText}>Save Vet Info</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Notes Section */}
-      <View style={styles.section}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Notes</Text>
         <TextInput
           style={[styles.input, { height: 100 }]}
@@ -524,9 +488,9 @@ export default function PetProfileScreen() {
           }}
         />
       </View>
-
+      
       {/* Medication Section */}
-      <View style={styles.section}>
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Medication Schedule</Text>
 
         {petData.logs?.medicationsList &&
@@ -752,7 +716,7 @@ export default function PetProfileScreen() {
         />
 
         {/* Feeding Schedule Section */}
-        <View style={styles.section}>
+        <View style={styles.card}>
           <Text style={styles.sectionTitle}>Feeding Schedule</Text>
 
           {petData.logs?.feedingSchedule &&
@@ -917,7 +881,7 @@ export default function PetProfileScreen() {
             }}
           />
 
-          <View style={styles.section}>
+<View style={styles.card}>
             <Text style={styles.sectionTitle}>Weight Tracker</Text>
 
             <Text style={styles.info}>Enter Weight:</Text>
@@ -961,28 +925,27 @@ export default function PetProfileScreen() {
 
             {weightHistory.length > 1 && (
               <LineChart
-                data={{
-                  labels: sortedWeightHistory.map((entry) => entry.date),
-                  datasets: [
-                    {
-                      data: sortedWeightHistory.map((entry) => entry.weight),
-                    },
-                  ],
-                }}
-                width={screenWidth - 40}
-                height={220}
-                chartConfig={{
-                  backgroundGradientFrom: "#1E2923",
-                  backgroundGradientTo: "#08130D",
-                  decimalPlaces: 1,
-                  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                  labelColor: (opacity = 1) =>
-                    `rgba(255, 255, 255, ${opacity})`,
-                  style: { borderRadius: 16 },
-                  propsForDots: { r: "6", strokeWidth: "2", stroke: "#ffa726" },
-                }}
-                style={{ marginVertical: 20, borderRadius: 16 }}
-              />
+  data={{
+    labels: sortedWeightHistory.map((entry) => entry.date),
+    datasets: [{ data: sortedWeightHistory.map((entry) => entry.weight) }],
+  }}
+  width={screenWidth} // 🔥 full width
+  height={220}
+  chartConfig={{
+    backgroundGradientFrom: "#1E2923",
+    backgroundGradientTo: "#08130D",
+    decimalPlaces: 1,
+    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+    style: { borderRadius: 16 },
+    propsForDots: { r: "6", strokeWidth: "2", stroke: "#ffa726" },
+  }}
+  style={{
+    marginVertical: 20,
+    alignSelf: "center",   // ✅ force center
+  }}
+/>
+
             )}
           </View>
         </View>
@@ -993,93 +956,98 @@ export default function PetProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#FAF3E0",
     padding: 20,
     alignItems: "center",
-    backgroundColor: "#FAF3E0", // soft cream
-    minHeight: "100%",
+  },
+  profileCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 20,
+    marginTop: 20,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 15,
+    width: "100%",
+    marginBottom: 20,
+    marginTop: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  petImage: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 4,
+    borderColor: "#2A9D8F",
+    marginBottom: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
+    color: "#F4A261",
     fontWeight: "bold",
-    color: "#F4A261", // warm orange
-    marginBottom: 10,
-    fontFamily: "Poppins-Bold", // optional if you load fonts
+    marginBottom: 5,
   },
   subtitle: {
     fontSize: 20,
-    color: "#2A9D8F", // teal
-    marginBottom: 20,
-    fontFamily: "Quicksand-Regular",
-  },
-  petImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
-    borderWidth: 4,
-    borderColor: "#2A9D8F",
-  },
-  section: {
-    backgroundColor: "#fff", // white cards
-    width: "100%",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3, // Android shadow
+    color: "#2A9D8F",
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#E76F51", // coral
+    color: "#E76F51",
     marginBottom: 10,
-    fontFamily: "Poppins-Bold",
   },
   info: {
     fontSize: 16,
     color: "#333",
     marginBottom: 5,
-    fontFamily: "Quicksand-Regular",
   },
   input: {
-    width: "100%",
-    padding: 12,
     borderWidth: 1,
     borderColor: "#ccc",
+    backgroundColor: "#fff",
+    padding: 10,
     borderRadius: 8,
-    backgroundColor: "#fff",
-    color: "#333",
     marginBottom: 10,
-    fontFamily: "Quicksand-Regular",
-  },
-  picker: {
-    width: "100%",
-    marginBottom: 10,
-    backgroundColor: "#fff",
     color: "#333",
   },
   button: {
     backgroundColor: "#2A9D8F",
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
     fontWeight: "bold",
-    fontFamily: "Poppins-Bold",
+
+    
   },
-  medBox: {
-    backgroundColor: "#FAF3E0",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderColor: "#E76F51",
-    borderWidth: 1,
+  picker: {
+    width: '100%',
+    backgroundColor: '#fff',   // ✅ white background
+    borderColor: '#ccc',       // ✅ border color
+    borderWidth: 1,            // ✅ add border
+    borderRadius: 8,           // ✅ rounded corners
+    paddingHorizontal: 10,     // ✅ some padding
+    marginBottom: 10,          // ✅ spacing below
+    color: '#333',             // ✅ text color inside picker
   },
+  
 });
