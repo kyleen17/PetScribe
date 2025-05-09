@@ -20,6 +20,8 @@ import { Alert, Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 
 import * as ImagePicker from "expo-image-picker";
+import defaultPet from '../assets/images/default-pet.png';
+
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -219,7 +221,7 @@ export default function PetProfileScreen() {
           source={
             petData.image
               ? { uri: petData.image }
-              : require("../../assets/images/default-pet.png")
+              : require("../assets/images/default-pet.png")
           }
           style={styles.petImage}
           resizeMode="cover"

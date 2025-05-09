@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import bg1 from '../../assets/images/bg1.png'; // ✅ reuse background
+import bg1 from '../assets/images/bg1.png';
+import bg2 from '../assets/images/bg2.png';
+import bg3 from '../assets/images/bg3.png';
+
 
 export default function AddPetScreen() {
   const router = useRouter();
