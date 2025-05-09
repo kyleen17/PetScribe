@@ -231,6 +231,19 @@ export default function PetProfileScreen() {
 
         <Button title="Upload New Photo" color="#2A9D8F" onPress={pickImage} />
       </View>
+      <TouchableOpacity
+  style={styles.button}
+  onPress={() =>
+    router.push({
+      pathname: '/edit-pet',
+      params: { pet: JSON.stringify(petData) },
+    })
+  }
+>
+  <Text style={styles.buttonText}>Edit Pet</Text>
+</TouchableOpacity>
+
+
       {/* DETAILS */}
       <View style={styles.card}>
         {petData.breed && (
@@ -955,6 +968,8 @@ export default function PetProfileScreen() {
     </ScrollView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
