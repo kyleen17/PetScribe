@@ -20,8 +20,8 @@ import { Alert, Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 
 import * as ImagePicker from "expo-image-picker";
-import defaultPet from '../assets/images/default-pet.png';
 
+import RNHTMLtoPDF from "react-native-html-to-pdf";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -213,6 +213,41 @@ export default function PetProfileScreen() {
     }
   };
 
+  const handleExportProfile = async () => {
+    const htmlContent = `
+      <h1>${petData.name}'s Profile</h1>
+      <p><strong>Type:</strong> ${petData.type}</p>
+      <p><strong>Breed:</strong> ${petData.breed}</p>
+      <p><strong>Color:</strong> ${petData.color}</p>
+      <p><strong>Weight:</strong> ${petData.weight}</p>
+      <p><strong>Allergies:</strong> ${petData.allergies}</p>
+      <p><strong>Vet:</strong> ${petData.vetInfo}</p>
+      <p><strong>Notes:</strong> ${petData.notes}</p>
+      <p><strong>Last Bath:</strong> ${petData.logs?.lastBath}</p>
+      <p><strong>Bath Frequency:</strong> ${petData.logs?.bathFrequency}</p>
+      <p><strong>Birthday:</strong> ${petData.birthday}</p>
+      <p><strong>Food Schedule:</strong> ${petData.logs?.feedInstructions}</p>
+      <p><strong>Medication Schedule:</strong> ${petData.logs?.setMedName}</p>
+    
+    `;
+
+    try {
+      let options = {
+        html: htmlContent,
+        fileName: `${petData.name}_Profile`,
+        directory: "Documents",
+      };
+
+      const file = await RNHTMLtoPDF.convert(options);
+      console.log("✅ PDF saved at:", file.filePath);
+
+      alert(`PDF saved at: ${file.filePath}`);
+    } catch (error) {
+      console.error("❌ Failed to export PDF:", error);
+      alert("Error creating PDF");
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Pet details */}
@@ -232,18 +267,16 @@ export default function PetProfileScreen() {
         <Button title="Upload New Photo" color="#2A9D8F" onPress={pickImage} />
       </View>
       <TouchableOpacity
-  style={styles.button}
-  onPress={() =>
-    router.push({
-      pathname: '/edit-pet',
-      params: { pet: JSON.stringify(petData) },
-    })
-  }
->
-  <Text style={styles.buttonText}>Edit Pet</Text>
-</TouchableOpacity>
-
-
+        style={styles.button}
+        onPress={() =>
+          router.push({
+            pathname: "/edit-pet",
+            params: { pet: JSON.stringify(petData) },
+          })
+        }
+      >
+        <Text style={styles.buttonText}>Edit Pet</Text>
+      </TouchableOpacity>
       {/* DETAILS */}
       <View style={styles.card}>
         {petData.breed && (
@@ -366,7 +399,6 @@ export default function PetProfileScreen() {
           />
         )}
       </View>
-
       {/* Set Bath Frequency */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Set Bath Frequency</Text>
@@ -435,7 +467,6 @@ export default function PetProfileScreen() {
           }}
         />
       </View>
-
       {/* Pet ID Section */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Pet ID Number</Text>
@@ -474,12 +505,10 @@ export default function PetProfileScreen() {
             const updatedPet = { ...petData, vetInfo };
             await updatePetInStorage(updatedPet);
           }}
-
         >
           <Text style={styles.buttonText}>Save Vet Info</Text>
         </TouchableOpacity>
       </View>
-
       {/* Notes Section */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Notes</Text>
@@ -503,7 +532,6 @@ export default function PetProfileScreen() {
           }}
         />
       </View>
-      
       {/* Medication Section */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Medication Schedule</Text>
@@ -896,7 +924,7 @@ export default function PetProfileScreen() {
             }}
           />
 
-<View style={styles.card}>
+          <View style={styles.card}>
             <Text style={styles.sectionTitle}>Weight Tracker</Text>
 
             <Text style={styles.info}>Enter Weight:</Text>
@@ -940,36 +968,43 @@ export default function PetProfileScreen() {
 
             {weightHistory.length > 1 && (
               <LineChart
-  data={{
-    labels: sortedWeightHistory.map((entry) => entry.date),
-    datasets: [{ data: sortedWeightHistory.map((entry) => entry.weight) }],
-  }}
-  width={screenWidth} // 🔥 full width
-  height={220}
-  chartConfig={{
-    backgroundGradientFrom: "#1E2923",
-    backgroundGradientTo: "#08130D",
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    style: { borderRadius: 16 },
-    propsForDots: { r: "6", strokeWidth: "2", stroke: "#ffa726" },
-  }}
-  style={{
-    marginVertical: 20,
-    alignSelf: "center",   // ✅ force center
-  }}
-/>
-
+                data={{
+                  labels: sortedWeightHistory.map((entry) => entry.date),
+                  datasets: [
+                    { data: sortedWeightHistory.map((entry) => entry.weight) },
+                  ],
+                }}
+                width={screenWidth} // 🔥 full width
+                height={220}
+                chartConfig={{
+                  backgroundGradientFrom: "#1E2923",
+                  backgroundGradientTo: "#08130D",
+                  decimalPlaces: 1,
+                  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                  labelColor: (opacity = 1) =>
+                    `rgba(255, 255, 255, ${opacity})`,
+                  style: { borderRadius: 16 },
+                  propsForDots: { r: "6", strokeWidth: "2", stroke: "#ffa726" },
+                }}
+                style={{
+                  marginVertical: 20,
+                  alignSelf: "center", // ✅ force center
+                }}
+              />
             )}
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleExportProfile}
+            >
+              <Text style={styles.buttonText}>Export Profile</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
     </ScrollView>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -1053,18 +1088,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
-
-    
   },
   picker: {
-    width: '100%',
-    backgroundColor: '#fff',   // ✅ white background
-    borderColor: '#ccc',       // ✅ border color
-    borderWidth: 1,            // ✅ add border
-    borderRadius: 8,           // ✅ rounded corners
-    paddingHorizontal: 10,     // ✅ some padding
-    marginBottom: 10,          // ✅ spacing below
-    color: '#333',             // ✅ text color inside picker
+    width: "100%",
+    backgroundColor: "#fff", // ✅ white background
+    borderColor: "#ccc", // ✅ border color
+    borderWidth: 1, // ✅ add border
+    borderRadius: 8, // ✅ rounded corners
+    paddingHorizontal: 10, // ✅ some padding
+    marginBottom: 10, // ✅ spacing below
+    color: "#333", // ✅ text color inside picker
   },
-  
 });
