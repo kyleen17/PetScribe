@@ -23,7 +23,11 @@ import * as ImagePicker from "expo-image-picker";
 
 import RNHTMLtoPDF from "react-native-html-to-pdf";
 
+
+
 const screenWidth = Dimensions.get("window").width;
+
+
 
 // Set up notification handler
 Notifications.setNotificationHandler({
@@ -337,52 +341,48 @@ export default function PetProfileScreen() {
           color="#E76F51"
           onPress={() => setShowBirthdayPicker(true)}
         />
-      </View>{" "}
-      {/* ✅ close card here */}
-      // ✅ THIS IS OUTSIDE THE CARD
-      {showBirthdayPicker && (
-        <DateTimePicker
-          value={birthday || new Date()}
-          mode="date"
-          display="default"
-          onChange={async (event, selectedDate) => {
-            setShowBirthdayPicker(false);
-            if (selectedDate) {
-              const formattedDate = selectedDate.toISOString().split("T")[0];
-              setBirthday(selectedDate);
+    </View> {/* ✅ close card here */}
+{/* ✅ THIS IS OUTSIDE THE CARD */}
+{showBirthdayPicker && (
+  <DateTimePicker
+    value={birthday || new Date()}
+    mode="date"
+    display="default"
+    onChange={async (event, selectedDate) => {
+      setShowBirthdayPicker(false);
+      if (selectedDate) {
+        const formattedDate = selectedDate.toISOString().split("T")[0];
+        setBirthday(selectedDate);
 
-              // Save to storage
-              const updatedPet = {
-                ...petData,
-                birthday: formattedDate, // 👈 simplified
-              };
-              await updatePetInStorage(updatedPet);
-              console.log("🎉 Birthday saved:", formattedDate);
+        // Save to storage
+        const updatedPet = {
+          ...petData,
+          birthday: formattedDate,
+        };
+        await updatePetInStorage(updatedPet);
+        console.log("🎉 Birthday saved:", formattedDate);
 
-              // Schedule yearly notification
-              const month = selectedDate.getMonth();
-              const day = selectedDate.getDate();
-              const ageNow = calculateAge(formattedDate);
+        // Schedule yearly notification
+        const month = selectedDate.getMonth();
+        const day = selectedDate.getDate();
+        const ageNow = calculateAge(formattedDate);
 
-              console.log(
-                `🎉 Scheduling yearly birthday notification for ${
-                  month + 1
-                }/${day}`
-              );
+        console.log(`🎉 Scheduling yearly birthday notification for ${month + 1}/${day}`);
 
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: `🎂 Happy Birthday, ${petData.name}!`,
-                  body: `${petData.name} turns ${ageNow.years + 1} today! 🥳`,
-                },
-                trigger: { month, day, hour: 9, minute: 0, repeats: true },
-              });
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `🎂 Happy Birthday, ${petData.name}!`,
+            body: `${petData.name} turns ${ageNow.years + 1} today! 🥳`,
+          },
+          trigger: { month, day, hour: 9, minute: 0, repeats: true },
+        });
 
-              console.log("✅ Birthday & yearly notification scheduled.");
-            }
-          }}
-        />
-      )}
+        console.log("✅ Birthday & yearly notification scheduled.");
+      }
+    }}
+  />
+)}
+
       {/* Bathing Section */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Bathing</Text>
